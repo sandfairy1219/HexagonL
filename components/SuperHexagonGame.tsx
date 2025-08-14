@@ -592,7 +592,6 @@ export default function SuperHexagonGame() {
       
       <FirebaseLeaderboard 
         leaderboard={leaderboard.leaderboard} 
-        onClear={leaderboard.clearLeaderboard}
         isLoading={firebaseLeaderboard.isLoading}
         error={firebaseLeaderboard.error}
       />

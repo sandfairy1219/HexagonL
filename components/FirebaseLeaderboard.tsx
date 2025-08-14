@@ -11,7 +11,7 @@ export interface LeaderboardEntry {
 
 interface LeaderboardProps {
   leaderboard: LeaderboardEntry[]
-  onClear: () => void
+  onClear?: () => void
   isLoading?: boolean
   error?: string | null
 }
@@ -26,13 +26,6 @@ export default function Leaderboard({
     <div className="leaderboard">
       <div className="leaderboard-header">
         <h3>🏆 Global Leaderboard</h3>
-        <button 
-          className="clear-button" 
-          onClick={onClear}
-          disabled={isLoading}
-        >
-          Clear
-        </button>
       </div>
       
       {isLoading && (
