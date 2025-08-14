@@ -10,6 +10,25 @@ export class SoundGenerator {
     }
   }
 
+  // AudioContext 재개 메서드
+  async resumeAudioContext() {
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      try {
+        await this.audioContext.resume()
+        return true
+      } catch (error) {
+        console.error('Failed to resume audio context:', error)
+        return false
+      }
+    }
+    return this.audioContext?.state === 'running'
+  }
+
+  // AudioContext 상태 확인
+  getAudioContextState() {
+    return this.audioContext?.state || 'closed'
+  }
+
   // 비프음 생성 (주파수, 지속시간, 볼륨)
   playBeep(frequency: number, duration: number, volume: number = 0.1) {
     if (!this.audioContext) return

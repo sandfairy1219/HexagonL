@@ -15,11 +15,34 @@ export default function AudioControls({ audioManager }: AudioControlsProps) {
     isMuted,
     toggleMute,
     setVolume,
+    initializeAudio,
+    isAudioInitialized,
   } = audioManager
 
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVolumeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isAudioInitialized) {
+      await initializeAudio()
+    }
     const newVolume = parseFloat(e.target.value)
     setVolume(newVolume)
+  }
+
+  const handleBGMToggle = async () => {
+    if (!isAudioInitialized) {
+      await initializeAudio()
+    }
+    if (isBGMPlaying) {
+      pauseBGM()
+    } else {
+      playBGM()
+    }
+  }
+
+  const handleMuteToggle = async () => {
+    if (!isAudioInitialized) {
+      await initializeAudio()
+    }
+    toggleMute()
   }
 
   return (
@@ -27,7 +50,7 @@ export default function AudioControls({ audioManager }: AudioControlsProps) {
       <div className="audio-control-group">
         <button 
           className="audio-button"
-          onClick={isBGMPlaying ? pauseBGM : playBGM}
+          onClick={handleBGMToggle}
           title={isBGMPlaying ? "Pause BGM" : "Play BGM"}
         >
           {isBGMPlaying ? "⏸️" : "▶️"}
@@ -35,7 +58,7 @@ export default function AudioControls({ audioManager }: AudioControlsProps) {
         
         <button 
           className="audio-button"
-          onClick={toggleMute}
+          onClick={handleMuteToggle}
           title={isMuted ? "Unmute" : "Mute"}
         >
           {isMuted ? "🔇" : "🔊"}

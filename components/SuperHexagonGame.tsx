@@ -2,7 +2,11 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { useAudioManager } from '@/hooks/useAudioManager'
+import { useFirebaseLeaderboard } from '@/hooks/useFirebaseLeaderboard'
+import { useLeaderboard } from '@/hooks/useLeaderboard'
 import AudioControls from '@/components/AudioControls'
+import FirebaseLeaderboard from '@/components/FirebaseLeaderboard'
+import ScoreSubmissionModal from '@/components/ScoreSubmissionModal'
 
 interface Player {
   segment: number
@@ -339,6 +343,18 @@ export default function SuperHexagonGame() {
   
   // 오디오 매니저 추가
   const audioManager = useAudioManager()
+  
+  // Firebase 리더보드 훅 (우선순위)
+  const firebaseLeaderboard = useFirebaseLeaderboard()
+  
+  // 로컬 리더보드 훅 (백업용)
+  const localLeaderboard = useLeaderboard()
+  
+  // Firebase 사용 가능 시 Firebase, 아니면 로컬 스토리지 사용
+  const leaderboard = firebaseLeaderboard.error ? localLeaderboard : firebaseLeaderboard
+  
+  // 점수 제출 모달 상태
+  const [showScoreModal, setShowScoreModal] = useState(false)
 
   useEffect(() => {
     if (canvasRef.current) {
@@ -352,6 +368,10 @@ export default function SuperHexagonGame() {
           } else if (state === 'gameOver') {
             setStartButtonText('Restart')
             audioManager.pauseBGM() // 일시정지만
+            // 하이스코어 체크
+            if (leaderboard.isHighScore(currentTime)) {
+              setShowScoreModal(true)
+            }
           } else if (state === 'playing') {
             setStartButtonText('Playing')
             audioManager.restartBGM() // 완전히 재시작
@@ -368,8 +388,13 @@ export default function SuperHexagonGame() {
   }, [])
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = async (e: KeyboardEvent) => {
       if (!gameRef.current) return
+      
+      // 사용자 인터랙션 시 오디오 초기화
+      if (!audioManager.isAudioInitialized) {
+        await audioManager.initializeAudio()
+      }
       
       switch(e.code) {
         case 'ArrowLeft':
@@ -391,24 +416,43 @@ export default function SuperHexagonGame() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [gameState])
+  }, [gameState, audioManager])
 
-  const handleMoveLeft = () => {
+  const handleMoveLeft = async () => {
+    if (!audioManager.isAudioInitialized) {
+      await audioManager.initializeAudio()
+    }
     if (gameRef.current && gameState === 'playing') {
       gameRef.current.movePlayer(-1)
     }
   }
 
-  const handleMoveRight = () => {
+  const handleMoveRight = async () => {
+    if (!audioManager.isAudioInitialized) {
+      await audioManager.initializeAudio()
+    }
     if (gameRef.current && gameState === 'playing') {
       gameRef.current.movePlayer(1)
     }
   }
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (gameRef.current && (gameState === 'waiting' || gameState === 'gameOver')) {
+      // 사용자 인터랙션 시 오디오 초기화
+      if (!audioManager.isAudioInitialized) {
+        await audioManager.initializeAudio()
+      }
       gameRef.current.startGame()
     }
+  }
+
+  const handleScoreSubmit = (playerName: string) => {
+    leaderboard.addScore(playerName, currentTime)
+    setShowScoreModal(false)
+  }
+
+  const handleScoreModalClose = () => {
+    setShowScoreModal(false)
   }
 
   const timeColor = currentTime < 10 ? '#4CAF50' : '#ff4444'
@@ -428,6 +472,11 @@ export default function SuperHexagonGame() {
       <div className="controls">
         <p>Use ← → arrow keys or buttons below to jump between segments, SPACE or Start button to start/restart</p>
         <p>Control the triangle and avoid the incoming walls!</p>
+        {!audioManager.isAudioInitialized && (
+          <p style={{ color: '#ffaa00', fontSize: '16px', marginTop: '10px' }}>
+            🎵 Click any button or press any key to enable audio
+          </p>
+        )}
       </div>
       <div className="mobile-controls">
         <button className="control-button start-button" onClick={handleStart}>
@@ -445,6 +494,22 @@ export default function SuperHexagonGame() {
           <div>Game Over!</div>
           <div style={{ fontSize: '20px', marginTop: '10px' }}>Press SPACE to restart</div>
         </div>
+      )}
+      
+      <FirebaseLeaderboard 
+        leaderboard={leaderboard.leaderboard} 
+        onClear={leaderboard.clearLeaderboard}
+        isLoading={firebaseLeaderboard.isLoading}
+        error={firebaseLeaderboard.error}
+      />
+      
+      {showScoreModal && (
+        <ScoreSubmissionModal
+          isOpen={showScoreModal}
+          score={currentTime}
+          onSubmit={handleScoreSubmit}
+          onClose={handleScoreModalClose}
+        />
       )}
     </div>
   )

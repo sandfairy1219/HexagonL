@@ -13,6 +13,8 @@ export interface AudioManager {
   isBGMPlaying: boolean
   isMuted: boolean
   toggleMute: () => void
+  initializeAudio: () => Promise<void>
+  isAudioInitialized: boolean
 }
 
 export function useAudioManager(): AudioManager {
@@ -24,6 +26,7 @@ export function useAudioManager(): AudioManager {
   const [isMuted, setIsMuted] = useState(false)
   const [volume, setVolumeState] = useState(0.5)
   const [useWebAudio, setUseWebAudio] = useState(false)
+  const [isAudioInitialized, setIsAudioInitialized] = useState(false)
 
   useEffect(() => {
     // SoundGenerator 초기화
@@ -53,12 +56,12 @@ export function useAudioManager(): AudioManager {
 
     // 효과음 초기화 시도
     const initSounds = async () => {
-      const soundFiles = ['move', 'collision', 'game-over', 'start']
+      const soundFiles = ['move', 'collision', 'gameOver', 'start']
       const loadedSounds: { [key: string]: HTMLAudioElement } = {}
 
       for (const soundName of soundFiles) {
         try {
-          const audio = new Audio(`/audio/${soundName}.mp3`)
+          const audio = new Audio(`/audio/${soundName === 'gameOver' ? 'game-over' : soundName}.mp3`)
           audio.volume = volume * 0.7
           
           await new Promise((resolve, reject) => {
@@ -69,7 +72,7 @@ export function useAudioManager(): AudioManager {
           
           loadedSounds[soundName] = audio
         } catch (error) {
-          console.log(`Sound file ${soundName}.mp3 not found, using web audio fallback`)
+          console.log(`Sound file ${soundName} not found, using web audio fallback`)
         }
       }
 
@@ -93,14 +96,28 @@ export function useAudioManager(): AudioManager {
     }
   }, [])
 
-  const playBGM = () => {
+  const playBGM = async () => {
     if (isMuted) return
 
+    // AudioContext 초기화 확인 및 재개
+    if (soundGeneratorRef.current) {
+      await soundGeneratorRef.current.resumeAudioContext()
+    }
+
     if (bgmRef.current) {
-      // 오디오 파일 사용 - 처음부터 재생
-      bgmRef.current.currentTime = 0 // 처음부터 재생
-      bgmRef.current.play().catch(console.error)
-      setIsBGMPlaying(true)
+      try {
+        // 오디오 파일 사용 - 처음부터 재생
+        bgmRef.current.currentTime = 0 // 처음부터 재생
+        await bgmRef.current.play()
+        setIsBGMPlaying(true)
+      } catch (error) {
+        console.error('Failed to play BGM:', error)
+        // 파일 재생 실패 시 웹 오디오로 폴백
+        if (soundGeneratorRef.current) {
+          bgmIntervalRef.current = soundGeneratorRef.current.startSimpleBGM()
+          setIsBGMPlaying(true)
+        }
+      }
     } else if (useWebAudio && soundGeneratorRef.current) {
       // 웹 오디오 API 사용
       bgmIntervalRef.current = soundGeneratorRef.current.startSimpleBGM()
@@ -183,6 +200,33 @@ export function useAudioManager(): AudioManager {
     setTimeout(() => playBGM(), 50) // 짧은 지연 후 재생
   }
 
+  const initializeAudio = async () => {
+    if (isAudioInitialized) return
+
+    try {
+      // 사용자 인터랙션 후 AudioContext 초기화
+      if (soundGeneratorRef.current) {
+        await soundGeneratorRef.current.resumeAudioContext()
+      }
+
+      // BGM 파일이 있다면 준비
+      if (bgmRef.current) {
+        // 짧은 무음 재생으로 브라우저 정책 우회
+        const tempPlay = bgmRef.current.play()
+        if (tempPlay) {
+          bgmRef.current.pause()
+          bgmRef.current.currentTime = 0
+          await tempPlay.catch(() => {}) // 에러 무시
+        }
+      }
+
+      setIsAudioInitialized(true)
+      console.log('Audio initialized successfully')
+    } catch (error) {
+      console.error('Failed to initialize audio:', error)
+    }
+  }
+
   return {
     playBGM,
     pauseBGM,
@@ -193,5 +237,7 @@ export function useAudioManager(): AudioManager {
     isBGMPlaying,
     isMuted,
     toggleMute,
+    initializeAudio,
+    isAudioInitialized,
   }
 }
