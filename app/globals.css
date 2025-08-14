@@ -25,10 +25,64 @@ body {
 canvas {
   border: 1px solid #333;
   background: #000;
+  transition: all 0.1s ease;
+}
+
+/* 게임 중 파동 효과 - 리듬 기반 */
+.game-playing canvas {
+  filter: brightness(1.05);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+  animation: canvas-rhythm-pulse 1.67s ease-in-out infinite;
+}
+
+@keyframes canvas-rhythm-pulse {
+  0%, 90% { 
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+    filter: brightness(1.05);
+  }
+  5%, 15% { 
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+    filter: brightness(1.1) contrast(1.1);
+    transform: scale(1.003);
+  }
+}
+
+/* 충돌 시 화면 진동 효과 */
+.screen-shake canvas {
+  animation: screen-shake 0.3s ease-in-out;
+}
+
+@keyframes screen-shake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-2px, -2px); }
+  20% { transform: translate(2px, -2px); }
+  30% { transform: translate(-2px, 2px); }
+  40% { transform: translate(2px, 2px); }
+  50% { transform: translate(-1px, -2px); }
+  60% { transform: translate(1px, 2px); }
+  70% { transform: translate(-1px, 1px); }
+  80% { transform: translate(1px, -1px); }
+  90% { transform: translate(-1px, 2px); }
 }
 
 .game-container {
   text-align: center;
+  transition: background 0.3s ease;
+}
+
+/* 게임 중 배경 파동 효과 - 리듬 기반 */
+.game-playing .game-container {
+  animation: rhythm-pulse 1.67s ease-in-out infinite;
+}
+
+@keyframes rhythm-pulse {
+  0%, 90% { 
+    background: radial-gradient(circle at center, #1a1a1a 0%, #000 70%);
+  }
+  5%, 15% { 
+    background: radial-gradient(circle at center, #3a3a3a 0%, #111 70%);
+    transform: scale(1.002);
+  }
 }
 
 .controls {
