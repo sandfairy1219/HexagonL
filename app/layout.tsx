@@ -2,8 +2,8 @@ import React from 'react'
 import './globals.css'
 
 export const metadata = {
-  title: 'Super Hexagon Clone',
-  description: 'A web-based Super Hexagon game clone',
+  title: 'HexagonL',
+  description: 'Super Hexagon!!',
 }
 
 export default function RootLayout({
