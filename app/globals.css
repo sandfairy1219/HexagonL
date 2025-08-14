@@ -119,3 +119,98 @@ canvas {
     margin-top: 10px;
   }
 }
+
+/* Audio Controls Styles */
+.audio-controls {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid #333;
+  backdrop-filter: blur(5px);
+}
+
+.audio-control-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.audio-button {
+  background: #333;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.audio-button:hover {
+  background: #555;
+  border-color: #777;
+}
+
+.audio-button:active {
+  background: #666;
+  transform: scale(0.95);
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.volume-label {
+  font-size: 14px;
+}
+
+.volume-slider {
+  width: 80px;
+  height: 4px;
+  background: #333;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #4CAF50;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #4CAF50;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+@media (max-width: 600px) {
+  .audio-controls {
+    position: relative;
+    top: auto;
+    right: auto;
+    margin: 10px auto;
+    width: fit-content;
+  }
+  
+  .audio-control-group {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}

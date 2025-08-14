@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
+import { useAudioManager } from '@/hooks/useAudioManager'
+import AudioControls from '@/components/AudioControls'
 
 interface Player {
   segment: number
@@ -38,8 +40,19 @@ class SuperHexagonGameEngine {
   difficultyMessageTime: number
   onTimeUpdate?: (time: number) => void
   onGameStateChange?: (state: GameState) => void
+  onPlayerMove?: () => void
+  onPlayerHit?: () => void
+  onGameStart?: () => void
+  onGameOver?: () => void
 
-  constructor(canvas: HTMLCanvasElement, callbacks?: { onTimeUpdate?: (time: number) => void; onGameStateChange?: (state: GameState) => void }) {
+  constructor(canvas: HTMLCanvasElement, callbacks?: { 
+    onTimeUpdate?: (time: number) => void
+    onGameStateChange?: (state: GameState) => void
+    onPlayerMove?: () => void
+    onPlayerHit?: () => void
+    onGameStart?: () => void
+    onGameOver?: () => void
+  }) {
     this.canvas = canvas
     this.ctx = canvas.getContext('2d')!
     this.width = canvas.width
@@ -49,6 +62,10 @@ class SuperHexagonGameEngine {
     
     this.onTimeUpdate = callbacks?.onTimeUpdate
     this.onGameStateChange = callbacks?.onGameStateChange
+    this.onPlayerMove = callbacks?.onPlayerMove
+    this.onPlayerHit = callbacks?.onPlayerHit
+    this.onGameStart = callbacks?.onGameStart
+    this.onGameOver = callbacks?.onGameOver
     
     this.gameState = 'waiting'
     this.startTime = 0
@@ -75,6 +92,7 @@ class SuperHexagonGameEngine {
   movePlayer(direction: number) {
     if (this.gameState !== 'playing') return
     this.player.segment = (this.player.segment + direction + 6) % 6
+    this.onPlayerMove?.() // 사운드 재생
   }
 
   startGame() {
@@ -91,6 +109,7 @@ class SuperHexagonGameEngine {
     this.difficultyMessageTime = 0
     
     this.onGameStateChange?.(this.gameState)
+    this.onGameStart?.() // 게임 시작 사운드
     this.generateWalls()
   }
 
@@ -192,6 +211,7 @@ class SuperHexagonGameEngine {
   takeDamage() {
     this.player.lives--
     this.player.invulnerable = 120
+    this.onPlayerHit?.() // 충돌 사운드
     
     if (this.player.lives <= 0) {
       this.gameOver()
@@ -201,6 +221,7 @@ class SuperHexagonGameEngine {
   gameOver() {
     this.gameState = 'gameOver'
     this.onGameStateChange?.(this.gameState)
+    this.onGameOver?.() // 게임 오버 사운드
   }
 
   showDifficultyMessage() {
@@ -315,6 +336,9 @@ export default function SuperHexagonGame() {
   const [gameState, setGameState] = useState<GameState>('waiting')
   const [currentTime, setCurrentTime] = useState(0)
   const [startButtonText, setStartButtonText] = useState('Start')
+  
+  // 오디오 매니저 추가
+  const audioManager = useAudioManager()
 
   useEffect(() => {
     if (canvasRef.current) {
@@ -324,12 +348,19 @@ export default function SuperHexagonGame() {
           setGameState(state)
           if (state === 'waiting') {
             setStartButtonText('Start')
+            audioManager.stopBGM() // 완전히 정지하고 처음으로 되돌림
           } else if (state === 'gameOver') {
             setStartButtonText('Restart')
+            audioManager.pauseBGM() // 일시정지만
           } else if (state === 'playing') {
             setStartButtonText('Playing')
+            audioManager.restartBGM() // 완전히 재시작
           }
-        }
+        },
+        onPlayerMove: () => audioManager.playSound('move'),
+        onPlayerHit: () => audioManager.playSound('collision'),
+        onGameStart: () => audioManager.playSound('start'),
+        onGameOver: () => audioManager.playSound('gameOver'),
       })
       
       gameRef.current.gameLoop()
@@ -384,6 +415,7 @@ export default function SuperHexagonGame() {
 
   return (
     <div className="game-container">
+      <AudioControls audioManager={audioManager} />
       <div className="score">
         Time: <span style={{ color: timeColor }}>{currentTime.toFixed(1)}</span>s
       </div>
