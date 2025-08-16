@@ -214,7 +214,7 @@ class SuperHexagonGameEngine {
     if (this.nextBeat <= 0) {
       // 속도에 따라 벽 생성 간격을 동적으로 조정 - 벽 사이 간격 일정 유지
       const speedRatio = this.wallSpeed / 0.6 // 초기 속도(0.6) 대비 현재 속도 비율
-      const dynamicInterval = Math.max(40, 80 / speedRatio) // 속도가 빠를수록 짧은 간격
+      const dynamicInterval = Math.max(40, 100 / speedRatio) // 속도가 빠를수록 짧은 간격
       
       this.beatInterval = dynamicInterval
       this.nextBeat = this.beatInterval
@@ -607,5 +607,6 @@ export default function SuperHexagonGame() {
     </div>
   )
 }
+
 
 
